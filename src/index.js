@@ -116,9 +116,9 @@ class Board extends React.Component {
 class Game extends React.Component {
     constructor(props) {
         super(props);
-        this.rows = 3;
-        this.cols = 3;
-        this.moves = [CONSTS.X, CONSTS.O];
+        this.rows = 5;
+        this.cols = 7;
+        this.moves = [CONSTS.X, CONSTS.O, "Z", "Y"];
         var board = Board.generateBoard(this.rows, this.cols);
         this.state = {
             board: arrayCopy(board),
@@ -174,19 +174,10 @@ class Game extends React.Component {
         this.setState(
             function(prevState, props) {
                 return {
-                    board: this.mutate(prevState.board, i, j, this.moves[prevState.nextMarker]),
-                    nextMarker: this.getNextMarker(prevState.nextMarker)
+                    board: this.mutate(prevState.board, i, j, this.moves[prevState.nextMarker])
                 };
             },
             function() {
-                var win = Board.checkWinner(this.winningPos, this.state.board);
-                if (win[0]) {
-                    this.gameFinished = true;
-                    this.winner = win[1];
-                } else if (Board.checkDraw(this.state.board)) {
-                    this.gameFinished = true;
-                }
-
                 this.setState(
                     {
                         status: this.status,
@@ -195,16 +186,34 @@ class Game extends React.Component {
                             .concat([arrayCopy(this.state.board)]), // store a copy to avoid mutation
                         moveHistoryEnd: this.state.moveHistoryEnd + 1
                     },
-                    function() {
-                        console.log(JSON.stringify(this.state.moveHistory));
-                    }
+                    x => this.setNextPlayer()
                 );
             }.bind(this)
         );
     }
 
+    setNextPlayer() {
+        var win = Board.checkWinner(this.winningPos, this.state.board), nextMarker;
+        if (win[0]) {
+            this.gameFinished = true;
+            this.winner = win[1];
+        } else if (Board.checkDraw(this.state.board)) {
+            this.gameFinished = true;
+            this.winner = CONSTS.B;
+        } else {
+            this.gameFinished = false;
+            nextMarker = (this.state.moveHistoryEnd - this.state.moveHistoryStart + 1) % this.moves.length;
+        }
+
+        this.setState({
+            status: this.status,nextMarker
+        });
+    }
+
     gotoMove(index) {
-        this.setState({ moveHistoryEnd: index + 1, board: arrayCopy(this.state.moveHistory[index]) });
+        this.setState({ moveHistoryEnd: index + 1, board: arrayCopy(this.state.moveHistory[index]) }, function() {
+            this.setNextPlayer();
+        });
     }
 
     resetBoard() {
