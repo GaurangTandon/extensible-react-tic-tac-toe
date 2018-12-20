@@ -9,7 +9,6 @@ const CONSTS = {
 };
 
 /**
- *
  * @param {Number[][]} arr
  */
 function arrayCopy(arr) {
@@ -35,27 +34,46 @@ function Square(props) {
 }
 
 class Board extends React.Component {
+    /**
+     * return a blank board of size rows x cols
+     * @param {Number} rows
+     * @param {Number} cols
+     */
     static generateBoard(rows, cols) {
         return [...new Array(rows)].map(x => [...new Array(cols)].map(y => CONSTS.B));
     }
+
+    /**
+     * generate an array of all winning positions
+     * for a board of size rows x cols
+     * @param {Number} rows
+     * @param {Number} cols
+     */
     static generateWinningPositions(rows, cols) {
-        var out = [];
+        var out = [],
+            CONSEC_REQUIRED = 3;
 
         for (let i = 0; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
-                let iplus2 = i + 2 < rows,
-                    iminus2 = i - 2 >= 0,
-                    jplus2 = j + 2 < cols;
-                if (iplus2) out.push([[i, j], [i + 1, j], [i + 2, j]]);
-                if (jplus2) out.push([[i, j], [i, j + 1], [i, j + 2]]);
-                if (iplus2 && jplus2) out.push([[i, j], [i + 1, j + 1], [i + 2, j + 2]]);
-                if (iminus2 && jplus2) out.push([[i, j], [i - 1, j + 1], [i - 2, j + 2]]);
+                let iCanGoForward = i + CONSEC_REQUIRED - 1 < rows,
+                    iCanGoBackward = i - (CONSEC_REQUIRED - 1) >= 0,
+                    jCanGoForward = j + CONSEC_REQUIRED - 1 < cols;
+                if (iCanGoForward) out.push([[i, j], [i + 1, j], [i + 2, j]]);
+                if (jCanGoForward) out.push([[i, j], [i, j + 1], [i, j + 2]]);
+                if (iCanGoForward && jCanGoForward) out.push([[i, j], [i + 1, j + 1], [i + 2, j + 2]]);
+                if (iCanGoBackward && jCanGoForward) out.push([[i, j], [i - 1, j + 1], [i - 2, j + 2]]);
             }
         }
 
         return out;
     }
 
+    /**
+     * Checks, given a list of winning positions, whether any player is winning
+     * on the board.
+     * @param {Number[][][]} winningPos
+     * @param {String[][]} board
+     */
     static checkWinner(winningPos, board) {
         var winChar = CONSTS.B,
             isWinning = winningPos.some(function(pos) {
@@ -71,7 +89,14 @@ class Board extends React.Component {
         return [isWinning, winChar];
     }
 
-    static checkDraw(board) {
+    /**
+     * Check if the given board indicates a drawn state i.e.
+     * the board has no extra place for a player left.
+     * (assumes that there is no winner, so it may return true
+     *  if at last move player wins.)
+     * @param {Character[][]} board
+     */
+    static boardIsFull(board) {
         for (let i = 0, rows = board.length, cols = board[0].length; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
                 if (board[i][j] === CONSTS.B) return false;
@@ -82,7 +107,6 @@ class Board extends React.Component {
     }
 
     /**
-     *
      * @param {Number} i
      * @param {Number} j
      * @param {String} text
@@ -133,6 +157,9 @@ class Game extends React.Component {
         this.winner = CONSTS.B;
     }
 
+    /**
+     * Returns current status text displayed at the top of the board.
+     */
     get status() {
         if (this.gameFinished) {
             if (this.winner !== CONSTS.B) return `The winner is ${this.winner}`;
@@ -141,7 +168,7 @@ class Game extends React.Component {
     }
 
     /**
-     * cannot mutate grid values directly
+     * cannot mutate grid state value directly
      * @param {*} grid
      * @param {*} i
      * @param {*} j
@@ -155,28 +182,31 @@ class Game extends React.Component {
     /**
      * in case you wanted to play tictactoe with more than two friends (symbols)
      * on a larger board, you can do so via this method
-     * @param {Number} marker current position in this.moves
+     * @param {Number} currMarker current position in this.moves
      */
-    getNextMarker(marker) {
-        return marker < this.moves.length - 1 ? marker + 1 : 0;
+    getNextMarker(currMarker) {
+        return currMarker < this.moves.length - 1 ? currMarker + 1 : 0;
     }
 
     /**
-     * index of square that was clicked
-     * @param {Number} i
-     * @param {Number} j
+     * Update board on each click. Clicking a filled square or one
+     * whose game is finished does not do anything.
+     * @param {Number} i row index of square that was clicked
+     * @param {Number} j column index of square that was clicked
      */
     handleBoardClick(i, j) {
         // clicking on already clicked square has no effect
         if (this.state.board[i][j] !== CONSTS.B) return true;
         if (this.gameFinished) return true;
 
+        // this function has a callback to the callback o.O
         this.setState(
             function(prevState, props) {
                 return {
                     board: this.mutate(prevState.board, i, j, this.moves[prevState.nextMarker])
                 };
             },
+            // first callback
             function() {
                 this.setState(
                     {
@@ -186,18 +216,24 @@ class Game extends React.Component {
                             .concat([arrayCopy(this.state.board)]), // store a copy to avoid mutation
                         moveHistoryEnd: this.state.moveHistoryEnd + 1
                     },
+                    // second callback
                     x => this.setNextPlayer()
                 );
             }.bind(this)
         );
     }
 
+    /**
+     * Set the next player state for the given board state (nextMarker).
+     * If there is a winner or game is drawn, indicate that game is finished.
+     */
     setNextPlayer() {
-        var win = Board.checkWinner(this.winningPos, this.state.board), nextMarker;
+        var win = Board.checkWinner(this.winningPos, this.state.board),
+            nextMarker;
         if (win[0]) {
             this.gameFinished = true;
             this.winner = win[1];
-        } else if (Board.checkDraw(this.state.board)) {
+        } else if (Board.boardIsFull(this.state.board)) {
             this.gameFinished = true;
             this.winner = CONSTS.B;
         } else {
@@ -206,16 +242,29 @@ class Game extends React.Component {
         }
 
         this.setState({
-            status: this.status,nextMarker
+            status: this.status,
+            nextMarker
         });
     }
 
-    gotoMove(index) {
-        this.setState({ moveHistoryEnd: index + 1, board: arrayCopy(this.state.moveHistory[index]) }, function() {
-            this.setNextPlayer();
-        });
+    /**
+     * Set board to the board obtained after said move number
+     * i.e. gotoMove(1) gives board after first move.
+     * Also recomputes next player accordingly.
+     * @param {Number} moveNumber
+     */
+    gotoMove(moveNumber) {
+        this.setState(
+            { moveHistoryEnd: moveNumber + 1, board: arrayCopy(this.state.moveHistory[moveNumber]) },
+            function() {
+                this.setNextPlayer();
+            }
+        );
     }
 
+    /**
+     * resets board to blank
+     */
     resetBoard() {
         this.gotoMove(0);
     }
