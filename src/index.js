@@ -8,6 +8,19 @@ const CONSTS = {
     B: ""
 };
 
+/**
+ *
+ * @param {Number[][]} arr
+ */
+function arrayCopy(arr) {
+    var out = [];
+    for (var i = 0, len = arr.length; i < len; i++) {
+        if (Array.isArray(arr[i])) out.push(arrayCopy(arr[i]));
+        else out.push(arr[i]);
+    }
+    return out;
+}
+
 function Square(props) {
     return (
         <button
@@ -59,7 +72,6 @@ class Board extends React.Component {
     }
 
     static checkDraw(board) {
-        console.log(board);
         for (let i = 0, rows = board.length, cols = board[0].length; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
                 if (board[i][j] === CONSTS.B) return false;
@@ -107,9 +119,13 @@ class Game extends React.Component {
         this.rows = 3;
         this.cols = 3;
         this.moves = [CONSTS.X, CONSTS.O];
+        var board = Board.generateBoard(this.rows, this.cols);
         this.state = {
-            board: Board.generateBoard(this.rows, this.cols),
-            nextMarker: 0
+            board: arrayCopy(board),
+            nextMarker: 0,
+            moveHistory: [arrayCopy(board)],
+            moveHistoryStart: 2,
+            moveHistoryEnd: 1
         };
         this.state.status = this.status;
         this.winningPos = Board.generateWinningPositions(this.rows, this.cols);
@@ -170,9 +186,45 @@ class Game extends React.Component {
                 } else if (Board.checkDraw(this.state.board)) {
                     this.gameFinished = true;
                 }
-                this.setState({ status: this.status });
+
+                this.setState(
+                    {
+                        status: this.status,
+                        moveHistory: this.state.moveHistory
+                            .slice(0, this.state.moveHistoryEnd)
+                            .concat([arrayCopy(this.state.board)]), // store a copy to avoid mutation
+                        moveHistoryEnd: this.state.moveHistoryEnd + 1
+                    },
+                    function() {
+                        console.log(JSON.stringify(this.state.moveHistory));
+                    }
+                );
             }.bind(this)
         );
+    }
+
+    gotoMove(index) {
+        this.setState({ moveHistoryEnd: index + 1, board: arrayCopy(this.state.moveHistory[index]) });
+    }
+
+    resetBoard() {
+        this.gotoMove(0);
+    }
+
+    /**
+     * moves the board one state behind
+     */
+    undoBoard() {
+        if (this.state.moveHistoryEnd > 1) this.gotoMove(this.state.moveHistoryEnd - 2);
+        else alert("Already at last move");
+    }
+
+    /**
+     * moves the board one state ahead
+     */
+    redoBoard() {
+        if (this.state.moveHistoryEnd < this.state.moveHistory.length) this.gotoMove(this.state.moveHistoryEnd);
+        else alert("Already at latest move");
     }
 
     render() {
@@ -186,7 +238,18 @@ class Game extends React.Component {
                     />
                 </div>
                 <div className="game-info">
-                    <ol>{}</ol>
+                    <button onClick={x => this.resetBoard()}>Reset board</button>
+                    <button onClick={x => this.undoBoard()}>Undo </button>
+                    <button onClick={x => this.redoBoard()}>Redo</button>
+                    <ol>
+                        {this.state.moveHistory
+                            .slice(this.state.moveHistoryStart, this.state.moveHistoryEnd)
+                            .map((x, index) => (
+                                <li key={index + 1}>
+                                    <button onClick={x => this.gotoMove(index + 1)}>Goto move {index + 1}</button>
+                                </li>
+                            ))}
+                    </ol>
                 </div>
             </div>
         );
