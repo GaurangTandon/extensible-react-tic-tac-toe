@@ -7,3 +7,5 @@ A customizable tic tac toe built on React. You can customize:
 3. the number of consecutive strokes required to get a win.
 
 Also features include a complete move history table, wherein you can undo/redo the moves, or goto a specific move in the history.
+
+Special thanks to [Create React App](https://github.com/facebook/create-react-app) for helping me focus on the code and abstracting away the initial setup of the localhost server and dependencies!
