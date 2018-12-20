@@ -142,7 +142,7 @@ class Game extends React.Component {
         super(props);
         this.rows = this.props.rows || 3;
         this.cols = this.props.cols || 3;
-        this.moves = this.props.moves || [CONSTS.X, CONSTS.O, "Z", "Y"];
+        this.moves = this.props.moves || [CONSTS.X, CONSTS.O];
         var board = Board.generateBoard(this.rows, this.cols);
         this.state = {
             board: arrayCopy(board),
