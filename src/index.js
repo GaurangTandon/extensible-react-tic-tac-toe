@@ -198,27 +198,17 @@ class Game extends React.Component {
         if (this.state.board[i][j] !== CONSTS.B) return true;
         if (this.gameFinished) return true;
 
-        // this function has a callback to the callback o.O
+        var newBoard = this.mutate(this.state.board, i, j, this.moves[this.state.nextMarker]),
+            newMoveHistory = this.state.moveHistory.slice(0, this.state.moveHistoryEnd).concat([arrayCopy(newBoard)]); // store a copy to avoid mutation
+
         this.setState(
-            function(prevState, props) {
-                return {
-                    board: this.mutate(prevState.board, i, j, this.moves[prevState.nextMarker])
-                };
+            {
+                board: newBoard,
+                moveHistory: newMoveHistory,
+                status: this.status,
+                moveHistoryEnd: this.state.moveHistoryEnd + 1
             },
-            // first callback
-            function() {
-                this.setState(
-                    {
-                        status: this.status,
-                        moveHistory: this.state.moveHistory
-                            .slice(0, this.state.moveHistoryEnd)
-                            .concat([arrayCopy(this.state.board)]), // store a copy to avoid mutation
-                        moveHistoryEnd: this.state.moveHistoryEnd + 1
-                    },
-                    // second callback
-                    x => this.setNextPlayer()
-                );
-            }.bind(this)
+            x => this.setNextPlayer()
         );
     }
 
