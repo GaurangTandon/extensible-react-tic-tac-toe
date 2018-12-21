@@ -21,9 +21,11 @@ function arrayCopy(arr) {
 }
 
 function Square(props) {
+    let className = "square";
+    if (props.isWinner) className += " winner";
     return (
         <button
-            className="square"
+            className={className}
             onClick={function() {
                 props.handleClick(+props.i, +props.j);
             }}
@@ -75,17 +77,19 @@ class Board extends React.Component {
      */
     static checkWinner(winningPos, board) {
         var winChar = CONSTS.B,
+            winPos = [],
             isWinning = winningPos.some(function(pos) {
                 let char = board[pos[0][0]][pos[0][1]];
                 if (char === CONSTS.B) return false;
                 if (char === board[pos[1][0]][pos[1][1]] && char === board[pos[2][0]][pos[2][1]]) {
                     winChar = char;
+                    winPos = pos.map(x => x[0] + "," + x[1]);
                     return true;
                 }
                 return false;
             }, this);
 
-        return [isWinning, winChar];
+        return [isWinning, winChar, winPos];
     }
 
     /**
@@ -110,19 +114,34 @@ class Board extends React.Component {
      * @param {Number} j
      * @param {String} text
      * @param {String} key
+     * @param {Boolean} isWinner - whether this square is part of a winning combination
      */
-    getSquare(i, j, text, key) {
-        return <Square i={i} j={j} key={key} handleClick={this.props.handleClick} text={text} />;
+    getSquare(i, j, text, key, isWinner) {
+        return (
+            <Square
+                i={i}
+                j={j}
+                key={key}
+                className
+                handleClick={this.props.handleClick}
+                text={text}
+                isWinner={isWinner}
+            />
+        );
     }
 
     render() {
         const status = this.props.status,
             rows = [];
 
-        this.props.board.forEach((row, index) => {
+        this.props.board.forEach((row, i) => {
             rows.push(
-                <div className="board-row" key={index}>
-                    {row.map((x, i) => this.getSquare(index, i, x, index + "" + i))}
+                <div className="board-row" key={i}>
+                    {row.map((x, j) => {
+                        let isWinner = this.props.winnerPos.indexOf(i + "," + j) !== -1;
+
+                        return this.getSquare(i, j, x, i + "" + j, isWinner);
+                    })}
                 </div>
             );
         });
@@ -139,9 +158,9 @@ class Board extends React.Component {
 class Game extends React.Component {
     constructor(props) {
         super(props);
-        this.rows = this.props.rows || 6;
-        this.cols = this.props.cols || 8;
-        this.moves = this.props.moves || ["A", "B", "C", "D"];
+        this.rows = this.props.rows || 3;
+        this.cols = this.props.cols || 3;
+        this.moves = this.props.moves || [CONSTS.X, CONSTS.O];
         var board = Board.generateBoard(this.rows, this.cols);
         this.state = {
             board: arrayCopy(board),
@@ -152,6 +171,7 @@ class Game extends React.Component {
         };
         this.state.status = this.status;
         this.winningPos = Board.generateWinningPositions(this.rows, this.cols, this.props.CONSEC_REQUIRED);
+        this.currentWinnerPos = [];
 
         this.winner = CONSTS.B;
     }
@@ -222,11 +242,14 @@ class Game extends React.Component {
         if (win[0]) {
             this.gameFinished = true;
             this.winner = win[1];
+            this.currentWinnerPos = win[2];
         } else if (Board.boardIsFull(this.state.board)) {
             this.gameFinished = true;
             this.winner = CONSTS.B;
+            this.currentWinnerPos = [];
         } else {
             this.gameFinished = false;
+            this.currentWinnerPos = [];
             nextMarker = (this.state.moveHistoryEnd - this.state.moveHistoryStart + 1) % this.moves.length;
         }
 
@@ -282,6 +305,7 @@ class Game extends React.Component {
                         handleClick={this.handleBoardClick.bind(this)}
                         board={this.state.board}
                         status={this.status}
+                        winnerPos={this.currentWinnerPos}
                     />
                 </div>
                 <div className="game-info">
@@ -305,4 +329,7 @@ class Game extends React.Component {
 
 // ========================================
 
-ReactDOM.render(<Game />, document.getElementById("root"));
+ReactDOM.render(
+    <Game rows={5} cols={7} CONSEC_REQUIRED={4} moves={["A", "B", "C"]} />,
+    document.getElementById("root")
+);
