@@ -1,5 +1,5 @@
 {
-    "name": "react-tic-tac-toe",
+    "name": "extensible-react-tic-tac-toe",
     "version": "1.0.0",
     "dependencies": {
         "react": "^16.6.3",
