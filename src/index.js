@@ -49,9 +49,8 @@ class Board extends React.Component {
      * @param {Number} rows
      * @param {Number} cols
      */
-    static generateWinningPositions(rows, cols) {
-        var out = [],
-            CONSEC_REQUIRED = 3;
+    static generateWinningPositions(rows, cols, CONSEC_REQUIRED = 3) {
+        var out = [];
 
         for (let i = 0; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
@@ -140,9 +139,9 @@ class Board extends React.Component {
 class Game extends React.Component {
     constructor(props) {
         super(props);
-        this.rows = this.props.rows || 3;
-        this.cols = this.props.cols || 3;
-        this.moves = this.props.moves || [CONSTS.X, CONSTS.O];
+        this.rows = this.props.rows || 6;
+        this.cols = this.props.cols || 8;
+        this.moves = this.props.moves || ["A", "B", "C", "D"];
         var board = Board.generateBoard(this.rows, this.cols);
         this.state = {
             board: arrayCopy(board),
@@ -152,7 +151,7 @@ class Game extends React.Component {
             moveHistoryEnd: 1
         };
         this.state.status = this.status;
-        this.winningPos = Board.generateWinningPositions(this.rows, this.cols);
+        this.winningPos = Board.generateWinningPositions(this.rows, this.cols, this.props.CONSEC_REQUIRED);
 
         this.winner = CONSTS.B;
     }

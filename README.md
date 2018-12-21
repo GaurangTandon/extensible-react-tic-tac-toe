@@ -10,6 +10,6 @@ Also features include a complete move history table, wherein you can undo/redo t
 
 The default application:
 
-![sample iamge](./src/tictactoe.png)
+![sample image](./src/tictactoe.png)
 
 Special thanks to [Create React App](https://github.com/facebook/create-react-app) for helping me focus on the code and abstracting away the initial setup of the localhost server and dependencies! Also to the introductory reactjs.org tutorial for the index.css files!
