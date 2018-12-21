@@ -1,4 +1,4 @@
-# react-tic-tac-toe
+# extensible-react-tic-tac-toe
 
 A customizable tic tac toe built on React. You can customize:
 
